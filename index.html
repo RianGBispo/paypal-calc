@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora PayPal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#E4EAE7; --ink:#14213D; --muted:#5A6478; --paper:#FFFFFF;
+  --line:#CBD3CF; --net:#0F7B6C; --fee:#B23A48; --field:#F4F7F5;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root{--page:#101A2E;--ink:#E8EEF0;--muted:#9AA6BA;--paper:#1A2740;--line:#2E3D5C;--net:#3CC3A8;--fee:#F07A88;--field:#223252}
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:var(--page);color:var(--ink);font:400 1rem/1.5 var(--body);-webkit-font-smoothing:antialiased}
+main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:28px}
+h1{font:800 clamp(2rem,6vw,3.2rem)/1 var(--display);letter-spacing:-.03em;margin:0}
+.sub{color:var(--muted);margin:.6rem 0 0;max-width:44ch}
+.lang{display:flex;border:1.5px solid var(--ink);border-radius:999px;overflow:hidden;flex-shrink:0}
+.lang button{border:0;background:transparent;color:var(--ink);font:700 .85rem var(--body);padding:6px 12px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--page)}
+.grid{display:grid;gap:28px;grid-template-columns:1fr}
+@media(min-width:820px){.grid{grid-template-columns:1fr 380px;align-items:start}}
+.form{display:grid;gap:20px}
+.field label,.field .lbl{display:block;font-weight:700;margin-bottom:8px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--field);border:1.5px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;border-radius:9px;background:transparent;color:var(--muted);font:700 .95rem var(--body);padding:10px 8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 0 var(--line),0 0 0 1.5px var(--ink)}
+.money{display:flex;align-items:center;background:var(--paper);border:1.5px solid var(--ink);border-radius:12px;padding:4px 6px 4px 16px}
+.money span{font:700 1.4rem var(--display);color:var(--muted)}
+.money input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:800 2rem var(--display);padding:8px 10px;font-variant-numeric:tabular-nums}
+.money input:focus{outline:none}
+.money:focus-within{box-shadow:0 0 0 3px color-mix(in srgb,var(--net) 40%,transparent)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+select,.rate input{width:100%;font:700 1rem var(--body);color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px}
+select:focus-visible,.rate input:focus-visible,button:focus-visible{outline:3px solid var(--net);outline-offset:2px}
+.hint{font-size:.85rem;color:var(--muted);margin:6px 0 0}
+[hidden]{display:none!important}
+
+.receipt{background:var(--paper);padding:26px 24px 34px;position:relative;
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/16px 100%;
+          mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/16px 100%;
+  filter:drop-shadow(0 1px 0 var(--line))}
+@media(min-width:820px){.receipt{position:sticky;top:calc(20px + env(safe-area-inset-top,0px))}}
+.receipt h2{font:700 1rem var(--display);margin:0 0 16px;color:var(--muted)}
+.pay{border-bottom:2px dashed var(--line);padding-bottom:16px;margin-bottom:12px}
+.pay .v{font:800 2.2rem/1.1 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.pay .approx{color:var(--muted);font-size:.9rem;margin-top:4px}
+dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-variant-numeric:tabular-nums}
+dt{color:var(--muted)} dd{margin:0;text-align:right;color:var(--fee);font-weight:700}
+.net{margin-top:16px;padding-top:16px;border-top:2px dashed var(--line)}
+.net .l{font-weight:700}
+.net .v{font:800 2.6rem/1.05 var(--display);color:var(--net);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.note{font-size:.82rem;color:var(--muted);margin:14px 0 0}
+.err{color:var(--fee);font-weight:700}
+.actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{flex:1;border:1.5px solid var(--ink);background:var(--ink);color:var(--page);border-radius:10px;padding:12px 14px;font:700 .95rem var(--body);cursor:pointer;min-width:140px}
+.btn.alt{background:transparent;color:var(--ink)}
+.rateRow{display:flex;gap:10px}.rateRow input{flex:1;min-width:0}.rateRow .btn{flex:0 0 auto;min-width:0;padding:10px 14px}
+.toast{font-size:.85rem;color:var(--net);font-weight:700;min-height:1.3em;margin-top:8px}
+footer{margin-top:40px;color:var(--muted);font-size:.8rem;max-width:70ch}
+footer a{color:inherit}
+@media (prefers-reduced-motion:no-preference){.net .v{transition:color .2s}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1 data-i18n="title">Quanto fica no PayPal</h1>
+      <p class="sub" data-i18n="sub">Veja quanto o comprador paga e quanto o vendedor recebe depois das tarifas.</p>
+    </div>
+    <div class="lang" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="pt">PT</button>
+      <button type="button" data-lang="en">EN</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="form" aria-labelledby="formTitle">
+      <h2 id="formTitle" hidden>Dados</h2>
+
+      <div class="field">
+        <span class="lbl" data-i18n="modeLbl">O que você sabe?</span>
+        <div class="seg" role="group">
+          <button type="button" data-mode="price" data-i18n="modePrice">O preço cobrado</button>
+          <button type="button" data-mode="net" data-i18n="modeNet">Quanto quero receber</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="amount" id="amountLbl"></label>
+        <div class="money"><span id="amountSym">R$</span><input id="amount" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
+        <p class="hint" id="amountHint"></p>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="cur" data-i18n="curLbl">Moeda da cobrança</label>
+          <select id="cur">
+            <option value="BRL">BRL (R$)</option>
+            <option value="USD">USD (US$)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="buyer" data-i18n="buyerLbl">Comprador está</label>
+          <select id="buyer">
+            <option value="intl" data-i18n="buyerIntl">No exterior</option>
+            <option value="br" data-i18n="buyerBr">No Brasil</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field" id="instWrap">
+        <label for="inst" data-i18n="instLbl">Parcelas</label>
+        <select id="inst"></select>
+      </div>
+
+      <div class="field rate" id="rateWrap">
+        <label for="rate" id="rateLbl"></label>
+        <div class="rateRow"><input id="rate" inputmode="decimal" autocomplete="off"><button type="button" class="btn alt" id="refreshBtn" data-i18n="refresh">Atualizar</button></div>
+        <p class="hint" id="rateHint"></p>
+      </div>
+    </section>
+
+    <section class="receipt" aria-live="polite">
+      <h2 data-i18n="receipt">Resumo</h2>
+      <div class="pay">
+        <div data-i18n="buyerPays">Comprador paga</div>
+        <div class="v" id="outPay">—</div>
+        <div class="approx" id="outPayApprox"></div>
+      </div>
+      <dl id="outFees"></dl>
+      <div class="net">
+        <div class="l" data-i18n="sellerGets">Vendedor recebe</div>
+        <div class="v" id="outNet">—</div>
+      </div>
+      <p class="note" id="outNote"></p>
+      <div class="actions">
+        <button type="button" class="btn" id="copyBtn" data-i18n="copy">Copiar link</button>
+        <button type="button" class="btn alt" id="shareBtn" data-i18n="share" hidden>Compartilhar</button>
+      </div>
+      <div class="toast" id="toast" role="status"></div>
+    </section>
+  </div>
+
+  <footer>
+    <p data-i18n="foot">Estimativa com as tarifas publicadas pelo PayPal Brasil para vendedores (atualização de 16/07/2025): 4,79% + tarifa fixa, +1,61% em vendas internacionais, +1,92% por parcela a partir de 2x e 3,5% de conversão ao converter moeda estrangeira para reais. O valor final exato aparece no PayPal, em Atividade.</p>
+  </footer>
+</main>
+
+<script>
+(function(){
+  const FIX = {BRL:0.60, USD:0.30, EUR:0.35, GBP:0.20};
+  const DOM = 0.0479, INTL = 0.0161, INST = 0.0192, CONV = 0.035, BUYER_CONV = 0.045;
+
+  const T = {
+    pt:{
+      title:"Quanto fica no PayPal", sub:"Veja quanto o comprador paga e quanto o vendedor recebe depois das tarifas.",
+      modeLbl:"O que você sabe?", modePrice:"O preço cobrado", modeNet:"Quanto quero receber",
+      amountPrice:"Preço da venda", amountNet:"Quanto o vendedor quer receber (em reais)",
+      hintNet:"Calculamos o preço a cobrar para sobrar esse valor.",
+      curLbl:"Moeda da cobrança", buyerLbl:"Comprador está", buyerIntl:"No exterior", buyerBr:"No Brasil",
+      instLbl:"Parcelas", instOne:"À vista", instN:n=>n+"x",
+      rateLbl:c=>"Cotação: 1 "+c+" em reais", rateLoading:"Buscando cotação…", rateLive:"Cotação comercial de agora. Pode editar.", rateFail:"Não foi possível buscar a cotação. Digite o valor.",
+      receipt:"Resumo", buyerPays:"Comprador paga", sellerGets:"Vendedor recebe",
+      feePct:p=>"Tarifa PayPal ("+p+")", feeFix:"Tarifa fixa", feeConv:"Conversão para reais (3,5%)",
+      approx:v=>"≈ "+v+" pela cotação informada",
+      noteIntlBRL:"Se o comprador pagar com saldo ou cartão em outra moeda, o PayPal dele converte com cerca de 4,5% acima do câmbio, além de possíveis tarifas do cartão.",
+      noteIntlFx:"O comprador paga na moeda escolhida. Se a conta dele for em outra moeda, pode haver conversão do lado dele.",
+      noteBr:"Venda nacional em reais: o comprador não paga tarifa.",
+      errAmount:"Digite um valor maior que zero.", errRate:"Informe a cotação para calcular.", errLow:"O valor é baixo demais para cobrir a tarifa fixa.",
+      copy:"Copiar link", share:"Compartilhar", refresh:"Atualizar", copied:"Link copiado. Quem abrir vê este mesmo resumo.",
+      foot:"Estimativa com as tarifas publicadas pelo PayPal Brasil para vendedores (atualização de 16/07/2025): 4,79% + tarifa fixa, +1,61% em vendas internacionais, +1,92% por parcela a partir de 2x e 3,5% de conversão ao converter moeda estrangeira para reais. O valor final exato aparece no PayPal, em Atividade."
+    },
+    en:{
+      title:"PayPal fee breakdown", sub:"See what the buyer pays and what the seller receives after fees.",
+      modeLbl:"What do you know?", modePrice:"The price", modeNet:"What I want to receive",
+      amountPrice:"Sale price", amountNet:"Amount the seller wants to receive (in BRL)",
+      hintNet:"We work out the price to charge so this amount is left over.",
+      curLbl:"Charge currency", buyerLbl:"Buyer is", buyerIntl:"Outside Brazil", buyerBr:"In Brazil",
+      instLbl:"Installments", instOne:"Single payment", instN:n=>n+"x",
+      rateLbl:c=>"Exchange rate: 1 "+c+" in BRL", rateLoading:"Fetching rate…", rateLive:"Current market rate. You can edit it.", rateFail:"Couldn't fetch the rate. Type it in.",
+      receipt:"Summary", buyerPays:"Buyer pays", sellerGets:"Seller receives",
+      feePct:p=>"PayPal fee ("+p+")", feeFix:"Fixed fee", feeConv:"Conversion to BRL (3.5%)",
+      approx:v=>"≈ "+v+" at the rate shown",
+      noteIntlBRL:"If you pay from a balance or card in another currency, your PayPal converts at about 4.5% above the exchange rate, plus any card fees.",
+      noteIntlFx:"You pay in the currency shown. If your account uses another currency, your side may apply a conversion.",
+      noteBr:"Domestic sale in BRL: the buyer pays no fee.",
+      errAmount:"Enter an amount greater than zero.", errRate:"Enter the exchange rate to calculate.", errLow:"The amount is too low to cover the fixed fee.",
+      copy:"Copy link", share:"Share", refresh:"Refresh", copied:"Link copied. Anyone who opens it sees this same summary.",
+      foot:"Estimate based on PayPal Brazil's published seller fees (updated 16 Jul 2025): 4.79% + fixed fee, +1.61% for international sales, +1.92% per installment from 2x, and 3.5% when converting foreign currency to BRL. The exact amount is shown in PayPal under Activity."
+    }
+  };
+
+  const $ = id => document.getElementById(id);
+  const S = {mode:"price", amount:"", cur:"BRL", buyer:"intl", inst:1, rate:"", lang:(navigator.language||"pt").toLowerCase().startsWith("pt")?"pt":"en"};
+  let liveRates = null, rateTouched = false;
+
+  // read link
+  const q = new URLSearchParams(location.search);
+  if(q.get("m")==="net") S.mode="net";
+  if(q.get("a")) S.amount=q.get("a");
+  if(FIX[q.get("c")]) S.cur=q.get("c");
+  if(q.get("b")==="br") S.buyer="br";
+  const pi=parseInt(q.get("p"),10); if(pi>=1&&pi<=12) S.inst=pi;
+  if(q.get("x")){S.rate=q.get("x"); rateTouched=true;}
+  if(q.get("l")==="pt"||q.get("l")==="en") S.lang=q.get("l");
+
+  const num = s => { if(s==null) return NaN; s=String(s).trim().replace(/\s/g,""); if(s.includes(",")) s=s.replace(/\./g,"").replace(",","."); return parseFloat(s); };
+  const loc = () => S.lang==="pt"?"pt-BR":"en-US";
+  const fmt = (v,c) => new Intl.NumberFormat(loc(),{style:"currency",currency:c}).format(v);
+  const pct = v => new Intl.NumberFormat(loc(),{style:"percent",minimumFractionDigits:2,maximumFractionDigits:2}).format(v);
+  const sym = c => ({BRL:"R$",USD:"US$",EUR:"€",GBP:"£"})[c];
+  const t = k => T[S.lang][k];
+
+  function fillInst(){
+    const sel=$("inst"); sel.innerHTML="";
+    for(let n=1;n<=12;n++){const o=document.createElement("option");o.value=n;o.textContent=n===1?t("instOne"):t("instN")(n);sel.appendChild(o);}
+    sel.value=S.inst;
+  }
+
+  function applyLang(){
+    document.documentElement.lang = S.lang==="pt"?"pt-BR":"en";
+    document.querySelectorAll("[data-i18n]").forEach(el=>{const v=t(el.dataset.i18n); if(typeof v==="string") el.textContent=v;});
+    document.querySelectorAll("[data-lang]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===S.lang));
+    document.title = t("title");
+    fillInst();
+  }
+
+  async function getJSON(url){
+    const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),7000);
+    try{ const r=await fetch(url,{signal:ctl.signal,cache:"no-store"}); if(!r.ok) throw new Error(r.status); return await r.json(); }
+    finally{ clearTimeout(tm); }
+  }
+  const valid = o => o && ["USD","EUR","GBP"].every(k=>isFinite(o[k]) && o[k]>0);
+  const SOURCES = [
+    async()=>{ const j=await getJSON("https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,GBP-BRL");
+      return {USD:+j.USDBRL.bid, EUR:+j.EURBRL.bid, GBP:+j.GBPBRL.bid}; },
+    async()=>{ const j=await getJSON("https://open.er-api.com/v6/latest/BRL");
+      return {USD:1/j.rates.USD, EUR:1/j.rates.EUR, GBP:1/j.rates.GBP}; },
+    async()=>{ const j=await getJSON("https://api.frankfurter.app/latest?from=BRL&to=USD,EUR,GBP");
+      return {USD:1/j.rates.USD, EUR:1/j.rates.EUR, GBP:1/j.rates.GBP}; }
+  ];
+
+  async function fetchRates(force){
+    const hint=$("rateHint");
+    if(force) rateTouched=false;
+    if(!rateTouched) hint.textContent=t("rateLoading");
+    liveRates=null;
+    for(const src of SOURCES){
+      try{ const r=await src(); if(valid(r)){ liveRates=r; break; } }catch(e){}
+    }
+    if(liveRates){
+      if(!rateTouched && S.cur!=="BRL"){S.rate=liveRates[S.cur].toFixed(4); $("rate").value=S.rate; syncUrl();}
+      if(!rateTouched) hint.textContent=t("rateLive");
+    } else if(!rateTouched) hint.textContent=t("rateFail");
+    render();
+  }
+
+  function render(){
+    // controls
+    document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===S.mode));
+    const netMode = S.mode==="net";
+    $("amountLbl").textContent = netMode?t("amountNet"):t("amountPrice");
+    $("amountSym").textContent = netMode?"R$":sym(S.cur);
+    $("amountHint").textContent = netMode?t("hintNet"):"";
+    $("instWrap").hidden = S.buyer!=="br";
+    const fx = S.cur!=="BRL";
+    $("rateWrap").hidden = !fx;
+    $("rateLbl").textContent = t("rateLbl")(S.cur);
+    if(rateTouched && fx) $("rateHint").textContent="";
+
+    const out = (pay,approx,fees,net,note)=>{ $("outPay").textContent=pay; $("outPayApprox").textContent=approx||""; $("outFees").innerHTML=fees||""; $("outNet").innerHTML=net; $("outNote").textContent=note||""; };
+
+    const a = num(S.amount);
+    if(!(a>0)) return out("—","","",'—', t("errAmount"));
+    const rate = fx ? num(S.rate) : 1;
+    if(!(rate>0)) return out("—","","",'—', t("errRate"));
+
+    const inst = S.buyer==="br" ? S.inst : 1;
+    const r = DOM + (S.buyer==="intl"?INTL:0) + (inst>1?(inst-1)*INST:0);
+    const fixed = FIX[S.cur];
+    const conv = fx?CONV:0;
+
+    let P;
+    if(netMode){
+      const netC = a/(rate*(1-conv));
+      P = Math.ceil(((netC+fixed)/(1-r))*100)/100;
+    } else P = a;
+
+    const feePct = P*r, netC = P-feePct-fixed;
+    if(netC<=0) return out(fmt(P,S.cur),"","",'—', t("errLow"));
+    const convFee = netC*rate*conv, netBRL = netC*rate-convFee;
+
+    let fees = `<dt>${t("feePct")(pct(r))}</dt><dd>− ${fmt(feePct,S.cur)}</dd><dt>${t("feeFix")}</dt><dd>− ${fmt(fixed,S.cur)}</dd>`;
+    if(fx) fees += `<dt>${t("feeConv")}</dt><dd>− ${fmt(convFee,"BRL")}</dd>`;
+
+    let note = S.buyer==="br" ? (fx?t("noteIntlFx"):t("noteBr")) : (fx?t("noteIntlFx"):t("noteIntlBRL"));
+    out(fmt(P,S.cur), fx?t("approx")(fmt(P*rate,"BRL")):"", fees, fmt(netBRL,"BRL"), note);
+  }
+
+  function link(){
+    const p=new URLSearchParams({m:S.mode,a:S.amount,c:S.cur,b:S.buyer,l:S.lang});
+    if(S.buyer==="br"&&S.inst>1) p.set("p",S.inst);
+    if(S.cur!=="BRL"&&S.rate) p.set("x",S.rate);
+    return location.origin+location.pathname+"?"+p.toString();
+  }
+  function syncUrl(){ try{history.replaceState(null,"",link());}catch(e){} }
+
+  // events
+  document.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode; render(); syncUrl();});
+  document.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{S.lang=b.dataset.lang; applyLang(); render(); syncUrl();});
+  $("amount").oninput=e=>{S.amount=e.target.value; render(); syncUrl();};
+  $("cur").onchange=e=>{S.cur=e.target.value; if(!rateTouched && liveRates && S.cur!=="BRL"){S.rate=liveRates[S.cur].toFixed(4); $("rate").value=S.rate;} else if(S.cur!=="BRL" && !S.rate && liveRates){S.rate=liveRates[S.cur].toFixed(4); $("rate").value=S.rate;} render(); syncUrl();};
+  $("buyer").onchange=e=>{S.buyer=e.target.value; render(); syncUrl();};
+  $("inst").onchange=e=>{S.inst=+e.target.value; render(); syncUrl();};
+  $("refreshBtn").onclick=()=>fetchRates(true);
+  $("rate").oninput=e=>{S.rate=e.target.value; rateTouched=true; render(); syncUrl();};
+
+  const toast=msg=>{$("toast").textContent=msg; clearTimeout(toast.t); toast.t=setTimeout(()=>$("toast").textContent="",3500);};
+  $("copyBtn").onclick=async()=>{
+    try{await navigator.clipboard.writeText(link());}
+    catch(e){const ta=document.createElement("textarea");ta.value=link();document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}
+    toast(t("copied"));
+  };
+  if(navigator.share){ $("shareBtn").hidden=false; $("shareBtn").onclick=()=>navigator.share({title:t("title"),url:link()}).catch(()=>{}); }
+
+  // init
+  $("amount").value=S.amount; $("cur").value=S.cur; $("buyer").value=S.buyer; $("rate").value=S.rate;
+  applyLang(); render(); fetchRates();
+})();
+</script>
+</body>
+</html>
